@@ -62,3 +62,82 @@ A lo largo de esta función, lo que se hace es guardar tanto la IP, como el puer
         thread = Thread(target=self.run)
         thread.start()
 ```
+
+#### check_conection
+El objetivo de esta función es comprobar si la conexión con el servidor está establecida. Y si no, intenta reconectarse cada 5 segundos hasta que lo logra.
+Es necesario que siempre que haya un tiempo de espera considerable entre interacciones con el servidor, este método sea el primero en ejecutarse. Si no, es posible que se generen errores durante la ejecución.
+En la versión actual (12/12/20) si no está establecida la conexión, intenta reconectarse cada 5 segundos. Es posible que esto pueda generar problemas en un futuro. De ser así, se actualizará.
+```python
+    def check_conection(self):
+        """
+        This function checks if the connection with the TWS or IB Gateway 
+        application and if it is not available, it reconnects.
+        
+        """
+        retFlag = self.isConnected()
+        
+        # i = 0 # Falta añadir un máximo número de intentos
+        while retFlag != True:
+            print('{}    Conexión con el servidor no disponible'.format(datetime.now()))
+            self.connect('127.0.0.1', 7497, 1)
+            
+            # Launch the client thread
+            thread = Thread(target=self.run)
+            thread.start()
+            
+            time.sleep(5)
+            retFlag = self.isConnected()
+        return
+```
+
+#### getHistoricalData
+´´´python
+def getHistoricalData(self, delay, contract, endDateTime, durationStr, barSizeSetting, whatToShow):
+        """
+        This function allows you to request a historical data from the server. 
+        The greater the number of data, the greater the margin delay that must
+        be provided to the server. In case the time does not reach, an empty 
+        list is returned
+
+        Parameters
+        ----------
+        contract : Contract
+            TWS Contract object
+        endDateTime : str
+            End date of the request
+        durationStr : TYPE
+            Lenght of the requested data
+        barSizeSetting : TYPE
+            Step beetwen data
+        whatToShow : TYPE
+            Ask, bid o midpoint
+
+        Returns
+        -------
+        hist_date : float list
+            List with requested date
+        hist_open : float list
+            List with requested open values
+        hist_high : float list
+            List with requested high values
+        hist_low : float list
+            List with requested low values
+        hist_close : float list
+            List with requested close values
+        hist_volume : float list
+            List with requested volume of operations
+
+        """
+        self.historical_data = []
+        self.reqHistoricalData(self.client_id, contract, endDateTime, durationStr, barSizeSetting, whatToShow, False, 1, False, [])
+        time.sleep(delay)
+        
+        hist_date = [instant.date for instant in self.historical_data]
+        hist_open = [instant.open for instant in self.historical_data]
+        hist_high = [instant.high for instant in self.historical_data]
+        hist_low = [instant.low for instant in self.historical_data]
+        hist_close = [instant.close for instant in self.historical_data]
+        hist_volume = [instant.volume for instant in self.historical_data]
+        
+        return (hist_date, hist_open , hist_high , hist_low , hist_close, hist_volume)
+´´´
