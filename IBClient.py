@@ -9,6 +9,7 @@ from datetime import datetime
 from threading import Thread
 import time
 
+from ibapi.contract import Contract
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.utils import iswrapper
@@ -16,12 +17,13 @@ from ibapi.utils import iswrapper
 from ibapi.order import Order
 
 
-class FaircoClient(EWrapper, EClient):
+class GrowiiClient(EWrapper, EClient):
     ''' Serves as the client and the wrapper '''
     client_id = -1
     address = ''
     port = ''
     
+    current_time = []
     historical_data = []  
     # nextValidOrderId = 0
     
@@ -55,6 +57,7 @@ class FaircoClient(EWrapper, EClient):
         thread = Thread(target=self.run)
         thread.start()
         
+        time.sleep(1)
         
     
     def check_conection(self):
@@ -77,6 +80,13 @@ class FaircoClient(EWrapper, EClient):
             time.sleep(5)
             retFlag = self.isConnected()
         return
+
+    def getCurrentTime(self):
+        self.reqCurrentTime()
+        time.sleep(0.5)
+        return self.current_time
+
+
 
     def getHistoricalData(self, delay, contract, endDateTime, durationStr, barSizeSetting, whatToShow):
         """
@@ -123,8 +133,9 @@ class FaircoClient(EWrapper, EClient):
         hist_high = [instant.high for instant in self.historical_data]
         hist_low = [instant.low for instant in self.historical_data]
         hist_close = [instant.close for instant in self.historical_data]
+        hist_volume = [instant.volume for instant in self.historical_data]
         
-        return (hist_date, hist_open , hist_high , hist_low , hist_close)
+        return (hist_date, hist_open , hist_high , hist_low , hist_close, hist_volume)
     
   
         
@@ -195,8 +206,8 @@ class FaircoClient(EWrapper, EClient):
         
     @iswrapper
     def currentTime(self, cur_time):
-        t = datetime.fromtimestamp(cur_time)
-        print('Current time: {}'.format(t))
+        self.current_time = datetime.fromtimestamp(cur_time)
+        
     
     @iswrapper
     def historicalData(self, req_id, bar):
@@ -224,16 +235,44 @@ class FaircoClient(EWrapper, EClient):
 def main():
 
     # Create the client and connect to TWS
-    client = FaircoClient('127.0.0.1', 7497, 0)
+    print ('Inicio conexion con el servidor')
+    client = GrowiiClient('127.0.0.1', 7497, 0)
+    print ('Conexion con el servidor completa\n')
+
+    time.sleep(3)
 
     # Request the current time
-    client.reqCurrentTime()
+    print ('Comprobación tiempo del servidor')
+    current_time = client.getCurrentTime()
+    print ('El momento actual es {}\n'.format(current_time))
 
-    # Sleep while the request is processed
-    time.sleep(0.5)
+    time.sleep(3)
+
+    #Request data
+    con = Contract()
+    con.symbol = "EUR"
+    con.secType = "CASH"
+    con.exchange = "IDEALPRO"
+    con.currency = "USD"
+
+    endDateTime = datetime.now().strftime("%Y%m%d, %H:%M:%S")
+    durationStr = str(10*60) + " S"
+    barSizeSetting = "1 min"
+    whatToShow = "MIDPOINT"
+
+    delay = 1
+
+    print('Comprobacion de descarga de datos')
+    historical_date, historical_open, historical_high, historical_low, historical_close, historical_volume  = client.getHistoricalData(delay, con, endDateTime, durationStr, barSizeSetting, whatToShow)  
+    print('\n')
+
+    time.sleep(3)
 
     # Disconnect from TWS
+    print('Procedo a la desconexión')
     client.disconnect()
+    print('Desconexión realizada')
+
 
 if __name__ == '__main__':
     main()
