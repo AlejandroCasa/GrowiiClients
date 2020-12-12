@@ -91,7 +91,9 @@ En la versión actual (12/12/20) si no está establecida la conexión, intenta r
 ```
 
 #### getHistoricalData
-´´´python
+Esta función lo que permite es la descarga de datos históricos a través de IB. Una de las limitaciones que da IB es que no es un servicio de provisión de datos financieros, por lo que 
+
+```python
 def getHistoricalData(self, delay, contract, endDateTime, durationStr, barSizeSetting, whatToShow):
         """
         This function allows you to request a historical data from the server. 
@@ -140,4 +142,4 @@ def getHistoricalData(self, delay, contract, endDateTime, durationStr, barSizeSe
         hist_volume = [instant.volume for instant in self.historical_data]
         
         return (hist_date, hist_open , hist_high , hist_low , hist_close, hist_volume)
-´´´
+```
